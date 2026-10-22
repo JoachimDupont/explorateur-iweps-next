@@ -1,0 +1,347 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Explorateur IWEPS</title>
+  <style>
+    :root {
+      --green: #176b52;
+      --green-light: #e8f3ed;
+      --ink: #20332d;
+      --muted: #66756f;
+      --border: #dfe7e2;
+      --bg: #f5f8f6;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    header {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 20px 6%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand { font-size: 21px; font-weight: 800; }
+    .brand span { color: var(--green); }
+    .tag { color: var(--muted); font-size: 13px; }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 42px 22px;
+    }
+
+    .hero {
+      background: var(--green);
+      color: white;
+      border-radius: 18px;
+      padding: 36px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-size: 12px;
+      opacity: .8;
+    }
+
+    h1 { font-size: clamp(30px, 5vw, 46px); margin: 14px 0; }
+    .hero p { line-height: 1.7; max-width: 650px; }
+
+    .panel {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 26px;
+      margin-bottom: 22px;
+    }
+
+    h2 { margin-top: 0; font-size: 21px; }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    input, select, button {
+      font: inherit;
+      border-radius: 9px;
+      padding: 12px 14px;
+    }
+
+    input, select {
+      border: 1px solid #cbd8d0;
+      background: white;
+      color: var(--ink);
+      min-width: 0;
+    }
+
+    input { flex: 1; }
+
+    button {
+      background: var(--green);
+      color: white;
+      border: 0;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    button:hover { opacity: .9; }
+    button:disabled { opacity: .6; cursor: wait; }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .status {
+      background: var(--green-light);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 18px;
+      line-height: 1.6;
+      color: #285b48;
+    }
+
+    .results {
+      margin-top: 18px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .empty {
+      border: 1px dashed #cbd8d0;
+      padding: 26px;
+      border-radius: 12px;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .mini-card {
+      background: white;
+      border: 1px solid var(--border);
+      padding: 20px;
+      border-radius: 14px;
+    }
+
+    .mini-card strong { display: block; margin-bottom: 8px; }
+    .mini-card p { margin-bottom: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+
+    footer {
+      text-align: center;
+      padding: 28px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 700px) {
+      .filters, .cards { grid-template-columns: 1fr; }
+      .search-row { flex-direction: column; }
+      .hero { padding: 25px; }
+      main { padding: 25px 14px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Explorateur <span>IWEPS</span></div>
+    <div class="tag">Les données statistiques de la Wallonie</div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="eyebrow">Données publiques · Wallonie</div>
+      <h1>Explorer la Wallonie<br>par les données</h1>
+      <p>
+        Recherchez des indicateurs, comparez les territoires
+        et découvrez l'évolution des statistiques wallonnes
+        au fil du temps.
+      </p>
+    </section>
+
+    <section class="cards">
+      <div class="mini-card">
+        <strong>Catalogue d'indicateurs</strong>
+        <p>Retrouver les statistiques par mot-clé et par thème.</p>
+      </div>
+      <div class="mini-card">
+        <strong>Comparaison territoriale</strong>
+        <p>Préparer des comparaisons entre territoires disponibles.</p>
+      </div>
+      <div class="mini-card">
+        <strong>Graphiques et données</strong>
+        <p>Visualiser les évolutions et préparer les exports.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Rechercher un indicateur</h2>
+      <p>Entrez un mot-clé, par exemple « population », « emploi » ou « logement ».</p>
+
+      <form id="search-form">
+        <div class="search-row">
+          <input
+            id="query"
+            type="search"
+            placeholder="Rechercher un indicateur..."
+            aria-label="Mot-clé"
+          >
+          <button id="search-button" type="submit">Rechercher</button>
+        </div>
+      </form>
+
+      <div id="search-status" class="status" role="status">
+        L'interface est prête. Le catalogue réel des indicateurs
+        doit encore être raccordé à l'API de l'IWEPS.
+      </div>
+
+      <div id="results" class="results"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Explorer les données</h2>
+      <div class="filters">
+        <label>
+          Thème
+          <select id="theme">
+            <option value="">Tous les thèmes</option>
+            <option>Population</option>
+            <option>Économie et emploi</option>
+            <option>Territoire et logement</option>
+            <option>Environnement</option>
+            <option>Santé et société</option>
+          </select>
+        </label>
+
+        <label>
+          Territoire
+          <select id="territory">
+            <option value="">À sélectionner</option>
+            <option>Wallonie</option>
+            <option>Province</option>
+            <option>Arrondissement</option>
+            <option>Commune</option>
+          </select>
+        </label>
+
+        <label>
+          Période
+          <select id="period">
+            <option value="">Toutes les périodes disponibles</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="empty" style="margin-top:22px">
+        <strong>Votre espace d'analyse</strong>
+        <p>
+          Les graphiques interactifs, les périodes et les comparaisons
+          seront activés après la connexion du catalogue et des données
+          réelles. Les territoires et périodes proposés dépendront
+          de la disponibilité pour chaque indicateur.
+        </p>
+      </div>
+    </section>
+
+    <footer>
+      Projet indépendant d'exploration des données publiques de l'IWEPS.
+      <br>
+      Les données et leur disponibilité devront être vérifiées auprès de la source officielle.
+    </footer>
+  </main>
+
+  <script>
+    const form = document.getElementById("search-form");
+    const queryInput = document.getElementById("query");
+    const statusBox = document.getElementById("search-status");
+    const resultsBox = document.getElementById("results");
+    const searchButton = document.getElementById("search-button");
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const query = queryInput.value.trim();
+
+      if (!query) {
+        statusBox.textContent = "Entrez un mot-clé pour lancer une recherche.";
+        resultsBox.replaceChildren();
+        return;
+      }
+
+      searchButton.disabled = true;
+      statusBox.textContent = "Recherche en cours...";
+      resultsBox.replaceChildren();
+
+      try {
+        const response = await fetch(
+          "/api/indicators?q=" + encodeURIComponent(query)
+        );
+
+        if (!response.ok) {
+          throw new Error("La recherche a échoué.");
+        }
+
+        const data = await response.json();
+        statusBox.textContent = data.message ||
+          "Réponse reçue du serveur.";
+
+        if (data.indicators && data.indicators.length > 0) {
+          data.indicators.forEach(function (indicator) {
+            const item = document.createElement("div");
+            item.className = "mini-card";
+
+            const title = document.createElement("strong");
+            title.textContent = indicator.title || indicator.name ||
+              indicator.id || "Indicateur";
+
+            const description = document.createElement("p");
+            description.textContent = indicator.description || "";
+
+            item.append(title, description);
+            resultsBox.appendChild(item);
+          });
+        }
+      } catch (error) {
+        statusBox.textContent =
+          "Impossible de joindre le serveur. Réessayez plus tard.";
+      } finally {
+        searchButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
