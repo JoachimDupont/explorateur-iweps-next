@@ -1,0 +1,10 @@
+
+services:
+  - type: web
+    name: explorateur-iweps-next
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /api/health
+    autoDeploy: true
