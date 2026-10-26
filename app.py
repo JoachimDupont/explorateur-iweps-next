@@ -1,7 +1,9 @@
 from flask import Flask, jsonify, render_template, request, Response
 
 app = Flask(__name__)
-
+_catalog = []
+_loaded = 0
+CACHE_SECONDS = 21600
 def load_catalog():
     global _catalog, _loaded
     if _catalog and time.time() - _loaded < CACHE_SECONDS:
