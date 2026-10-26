@@ -4,6 +4,17 @@ app = Flask(__name__)
 _catalog = []
 _loaded = 0
 CACHE_SECONDS = 21600
+import requests
+
+CATALOG_URL = "https://opendata.iweps.be/statdcat-ap/walstat"
+DATA_URL = "https://opendata.iweps.be/api/data"
+
+session = requests.Session()
+session.headers.update({"User-Agent": "Explorateur-IWEPS/2.0"})
+
+_catalog = []
+_loaded = 0
+CACHE_SECONDS = 21600
 def load_catalog():
     global _catalog, _loaded
     if _catalog and time.time() - _loaded < CACHE_SECONDS:
