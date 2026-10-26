@@ -1,429 +1,68 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Explorateur territorial IWEPS</title>
-  <style>
-    :root {
-      --green: #176b52;
-      --light: #f3f7f5;
-      --border: #dce5e0;
-      --text: #20332c;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: system-ui, Arial, sans-serif;
-      color: var(--text);
-      background: var(--light);
-    }
-    header {
-      padding: 30px 5%;
-      background: var(--green);
-      color: white;
-    }
-    header h1 { margin: 0 0 8px; font-size: 27px; }
-    header p { margin: 0; opacity: .9; }
-    main { max-width: 1200px; margin: 28px auto; padding: 0 18px; }
-    .panel {
-      background: white;
-      padding: 22px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-    h2 { margin-top: 0; font-size: 20px; }
-    label { display: block; font-weight: 600; margin-bottom: 7px; }
-    input, select, button {
-      font: inherit;
-      padding: 11px 12px;
-      border: 1px solid #cbd8d1;
-      border-radius: 7px;
-      width: 100%;
-      background: white;
-    }
-    button {
-      background: var(--green);
-      color: white;
-      border: 0;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    button:disabled { opacity: .5; cursor: wait; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 16px;
-    }
-    .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-    .actions button { width: auto; }
-    .secondary { background: #e6efea; color: var(--green); }
-    #status { margin: 14px 0 0; color: #52665c; }
-    #status.error { color: #b42318; }
-    #results { display: grid; gap: 8px; margin-top: 15px; }
-    .indicator {
-      display: block;
-      text-align: left;
-      background: white;
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 13px;
-      font-weight: 400;
-    }
-    .indicator:hover, .indicator.selected {
-      border-color: var(--green);
-      background: #edf6f1;
-    }
-    .indicator strong { display: block; }
-    .indicator small { display: block; color: #64766d; margin-top: 5px; }
-    .table-wrap { overflow-x: auto; }
-    table { border-collapse: collapse; width: 100%; font-size: 14px; }
-    th, td {
-      border-bottom: 1px solid var(--border);
-      padding: 10px;
-      text-align: left;
-      white-space: nowrap;
-    }
-    th { background: #edf3ef; }
-    #dataOutput {
-      max-height: 420px;
-      overflow: auto;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      font-size: 12px;
-      background: #f6f8f7;
-      padding: 12px;
-      border-radius: 6px;
-    }
-    footer { text-align: center; padding: 25px; color: #64766d; font-size: 13px; }
-    @media (max-width: 600px) {
-      header h1 { font-size: 23px; }
-      .panel { padding: 16px; }
-    }
-  </style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Explorateur territorial IWEPS</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--green:#176b52;--green2:#e7f2ed;--ink:#1d3029;--muted:#6d7e76;--line:#e1e9e4;--bg:#f5f7f6;--white:#fff;--shadow:0 8px 28px #1b43321a}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select{font:inherit}button{cursor:pointer}.layout{min-height:100vh;display:grid;grid-template-columns:248px minmax(0,1fr)}aside{background:#fff;border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:24px}.brand{display:flex;align-items:center;gap:11px;padding:0 8px}.brandmark{width:38px;height:38px;border-radius:12px;background:var(--green);color:white;display:grid;place-items:center;font-weight:800;font-size:18px}.brand b{display:block;font-size:14px}.brand small{color:var(--muted)}.navlabel{padding:0 10px;color:#84928b;text-transform:uppercase;font-size:10px;letter-spacing:.12em;font-weight:800}.nav{display:grid;gap:5px}.nav button{border:0;background:transparent;text-align:left;padding:11px 12px;border-radius:9px;color:#52635b;display:flex;align-items:center;gap:11px}.nav button.active,.nav button:hover{background:var(--green2);color:var(--green);font-weight:700}.nav .ico{width:20px;text-align:center;font-size:16px}.aside-note{margin-top:auto;background:#f4f8f5;border:1px solid var(--line);border-radius:12px;padding:14px;color:var(--muted);font-size:12px}.aside-note b{color:var(--ink);display:block;margin-bottom:4px}main{min-width:0;padding:28px clamp(16px,3vw,42px) 40px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:26px}.eyebrow{color:var(--green);font-size:11px;text-transform:uppercase;letter-spacing:.12em;font-weight:800}.topbar h1{font-size:27px;line-height:1.2;margin:5px 0 7px;letter-spacing:-.035em}.sub{color:var(--muted);margin:0}.statuspill{border:1px solid var(--line);background:white;border-radius:999px;padding:8px 12px;color:var(--muted);font-size:12px;white-space:nowrap}.view{display:none}.view.active{display:block}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px}.stat,.card{background:white;border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow)}.stat{padding:17px 19px}.stat .label{color:var(--muted);font-size:12px}.stat strong{display:block;font-size:25px;letter-spacing:-.03em;margin-top:5px}.stat small{color:var(--muted)}.card{padding:20px;margin-bottom:18px}.cardhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}.card h2{margin:0;font-size:16px}.cardhead p{margin:4px 0 0;color:var(--muted);font-size:12px}.searchrow{display:grid;grid-template-columns:minmax(160px,1fr) minmax(170px,240px);gap:10px;margin-bottom:16px}.field{width:100%;border:1px solid #d9e3dd;background:#fff;border-radius:9px;padding:11px 12px;color:var(--ink);outline:none}.field:focus{border-color:var(--green);box-shadow:0 0 0 3px #176b5214}.theme-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-bottom:18px}.theme-card{border:1px solid var(--line);background:#fff;border-radius:12px;text-align:left;padding:15px;min-height:98px;transition:.15s}.theme-card:hover,.theme-card.selected{border-color:var(--green);background:#f0f7f3;transform:translateY(-1px)}.theme-icon{font-size:20px;display:block;margin-bottom:7px}.theme-card b{display:block;font-size:13px}.theme-card small{color:var(--muted)}.result-head{display:flex;justify-content:space-between;align-items:center;margin:12px 0;color:var(--muted);font-size:12px}.indicator-list{display:grid;gap:8px}.indicator{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:white;border:1px solid var(--line);border-radius:10px;padding:13px}.indicator:hover,.indicator.selected{border-color:var(--green);background:#f7fbf8}.indicator .dot{width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:var(--green2);display:grid;place-items:center;color:var(--green)}.indicator .info{min-width:0;flex:1}.indicator b{display:block;font-size:13px;font-weight:700}.indicator small{display:block;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}.tag{font-size:10px;background:#eef2ef;color:#52635b;border-radius:999px;padding:5px 8px;white-space:nowrap}.split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:18px}.btn{border:0;background:var(--green);color:white;border-radius:9px;padding:10px 14px;font-weight:700}.btn.secondary{background:#e8f1ec;color:var(--green)}.btn:disabled{opacity:.45;cursor:not-allowed}.controls{display:grid;grid-template-columns:minmax(0,1fr) 180px 150px;gap:10px;margin-bottom:14px}.mapbox{height:490px;border-radius:12px;border:1px solid var(--line);overflow:hidden;background:#eef3ef;position:relative}.map-hint{position:absolute;z-index:500;top:12px;left:12px;background:#fff;padding:9px 12px;border-radius:9px;box-shadow:var(--shadow);font-size:12px;max-width:75%}.legend{position:absolute;z-index:500;bottom:18px;right:12px;background:white;border-radius:10px;padding:12px;box-shadow:var(--shadow);font-size:11px}.legendbar{width:145px;height:9px;border-radius:3px;background:linear-gradient(90deg,#f2f7e8,#a8d5a2,#4d9c70,#155c4b);margin:7px 0}.legendlabels{display:flex;justify-content:space-between;color:var(--muted)}.notice{border-radius:9px;background:#f6f8f7;border:1px solid var(--line);padding:11px 13px;color:var(--muted);font-size:12px;margin-top:12px}.message{padding:13px;border-radius:9px;background:#f6f8f7;color:var(--muted)}.message.error{background:#fff0ee;color:#a82c21}.commune-search{display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:15px}.commune-grid{display:grid;grid-template-columns:270px minmax(0,1fr);gap:18px}.commune-list{max-height:590px;overflow:auto;display:grid;align-content:start;gap:5px}.commune-item{border:1px solid transparent;background:white;border-radius:8px;padding:9px 10px;text-align:left}.commune-item:hover,.commune-item.active{border-color:var(--green);background:var(--green2);color:var(--green)}.profile-empty{min-height:250px;display:grid;place-items:center;text-align:center;color:var(--muted);padding:25px}.profile-title{display:flex;justify-content:space-between;align-items:start;gap:15px;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:16px}.profile-title h2{font-size:24px;margin:0 0 4px}.profile-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.kpi{background:#f7f9f8;border-radius:10px;padding:14px}.kpi small{color:var(--muted);display:block}.kpi b{font-size:20px;display:block;margin-top:4px}.tablewrap{overflow:auto;max-height:390px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}th{position:sticky;top:0;background:#f3f7f4;color:#52635b}.foot{color:var(--muted);font-size:11px;text-align:center;margin-top:24px}.hidden{display:none!important}
+@media(max-width:1050px){.layout{grid-template-columns:205px minmax(0,1fr)}.theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.split{grid-template-columns:1fr}.commune-grid{grid-template-columns:220px minmax(0,1fr)}}@media(max-width:720px){.layout{grid-template-columns:1fr}aside{position:static;border-right:0;border-bottom:1px solid var(--line);padding:13px;gap:12px}.brand{padding:0 5px}.nav{grid-template-columns:repeat(3,minmax(0,1fr))}.nav button{justify-content:center;flex-direction:column;gap:3px;padding:8px 4px;font-size:11px}.navlabel,.aside-note{display:none}main{padding:18px 12px}.topbar h1{font-size:23px}.statuspill{display:none}.stats{grid-template-columns:1fr 1fr}.stat:last-child{grid-column:span 2}.searchrow,.controls{grid-template-columns:1fr}.theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.commune-grid{grid-template-columns:1fr}.commune-list{max-height:220px;grid-template-columns:repeat(2,minmax(0,1fr))}.mapbox{height:390px}.card{padding:14px}.tag{display:none}}
+</style>
 </head>
 <body>
-<header>
-  <h1>Explorateur territorial de Wallonie</h1>
-  <p>Explorez les indicateurs statistiques de l'IWEPS par territoire et période.</p>
-</header>
-
+<div class="layout">
+<aside>
+ <div class="brand"><div class="brandmark">W</div><div><b>Explorateur territorial</b><small>IWEPS · Wallonie</small></div></div>
+ <div><div class="navlabel">Espace de travail</div><nav class="nav"><button class="active" data-view="catalogue"><span class="ico">▦</span>Catalogue</button><button data-view="carte"><span class="ico">⌖</span>Carte</button><button data-view="communes"><span class="ico">▤</span>Communes</button></nav></div>
+ <div class="aside-note"><b>Les territoires en données</b>Explorez les indicateurs locaux, comparez les communes et repérez les disparités territoriales wallonnes.</div>
+</aside>
 <main>
-  <section class="panel">
-    <h2>1. Rechercher un indicateur</h2>
-    <label for="search">Nom, thème ou identifiant</label>
-    <input id="search" type="search"
-           placeholder="Ex. population, emploi, logement…">
-    <p id="status" role="status">Chargement du catalogue…</p>
-    <div id="results"></div>
-  </section>
-
-  <section class="panel">
-    <h2>2. Choisir les données</h2>
-    <p id="selectedIndicator">Aucun indicateur sélectionné.</p>
-    <div class="grid">
-      <div>
-        <label for="territory">Territoire</label>
-        <select id="territory">
-          <option value="com">Communes</option>
-          <option value="arr">Arrondissements</option>
-          <option value="prov">Provinces</option>
-          <option value="reg">Région wallonne</option>
-        </select>
-      </div>
-      <div>
-        <label for="period">Période</label>
-        <select id="period">
-          <option value="all">Toutes les périodes</option>
-          <option value="last">Dernière période</option>
-        </select>
-      </div>
-      <div>
-        <label for="format">Format</label>
-        <select id="format">
-          <option value="json">JSON</option>
-          <option value="csv">CSV</option>
-        </select>
-      </div>
-    </div>
-    <div class="actions">
-      <button id="loadData">Afficher les données</button>
-      <button id="download" class="secondary" disabled>Télécharger</button>
-    </div>
-    <p id="dataStatus" role="status"></p>
-  </section>
-
-  <section class="panel">
-    <h2>3. Résultats</h2>
-    <div id="tableContainer" class="table-wrap">
-      Sélectionnez un indicateur pour afficher les données.
-    </div>
-    <h3>Données brutes</h3>
-    <pre id="dataOutput">Aucune donnée chargée.</pre>
-  </section>
+ <div class="topbar"><div><div class="eyebrow">Données territoriales ouvertes</div><h1 id="pageTitle">Explorer les indicateurs</h1><p class="sub" id="pageSubtitle">Parcourez le catalogue IWEPS par thème ou recherchez un indicateur.</p></div><div class="statuspill" id="apiStatus">● Connexion au catalogue…</div></div>
+ <section class="view active" id="view-catalogue">
+  <div class="stats"><div class="stat"><span class="label">Indicateurs indexés</span><strong id="indicatorCount">—</strong><small>Catalogue IWEPS disponible</small></div><div class="stat"><span class="label">Thématiques</span><strong id="themeCount">10+</strong><small>Classement indicatif par mots-clés</small></div><div class="stat"><span class="label">Échelles territoriales</span><strong>4</strong><small>Communes, arrondissements, provinces, Wallonie</small></div></div>
+  <div class="card"><div class="cardhead"><div><h2>Explorer par thématique</h2><p>Les catégories sont proposées automatiquement à partir des titres et descriptions.</p></div><button class="btn secondary" id="clearTheme">Tout afficher</button></div><div class="theme-grid" id="themeGrid"></div><div class="searchrow"><input class="field" id="search" placeholder="Rechercher un indicateur, un mot-clé ou un code…"><select class="field" id="themeFilter"><option value="">Toutes les thématiques</option></select></div><div class="result-head"><span id="resultCount">Chargement des indicateurs…</span><span>Choisissez un indicateur pour explorer ses données</span></div><div class="indicator-list" id="indicatorList"></div><div class="notice">Le classement thématique est une aide à la navigation, pas une taxonomie officielle IWEPS. Certains indicateurs peuvent relever de plusieurs sujets.</div></div>
+  <div class="card"><div class="cardhead"><div><h2>Explorer un indicateur sélectionné</h2><p id="selectedTitle">Sélectionnez un indicateur dans le catalogue.</p></div><button class="btn" id="loadSelected" disabled>Charger les données</button></div><div class="controls"><select class="field" id="territory"><option value="com">Communes</option><option value="arr">Arrondissements</option><option value="prov">Provinces</option><option value="reg">Région wallonne</option></select><select class="field" id="period"><option value="last">Dernière période</option><option value="all">Toutes les périodes</option></select><select class="field" id="dataFormat"><option value="json">JSON / tableau</option><option value="csv">CSV</option></select></div><div id="dataMessage" class="message">Aucune donnée chargée.</div><div id="dataTable" class="tablewrap" style="margin-top:12px"></div><div class="cardhead" style="margin-top:14px;margin-bottom:0"><span class="sub" id="rowInfo"></span><button class="btn secondary" id="downloadData" disabled>Télécharger les données</button></div></div>
+ </section>
+ <section class="view" id="view-carte"><div class="card"><div class="cardhead"><div><h2>Carte choroplèthe des communes</h2><p>Choisissez un indicateur : les communes sont colorées selon la valeur disponible la plus récente.</p></div><span class="tag">Limites communales 2025</span></div><div class="controls"><select class="field" id="mapIndicator"><option value="">Sélectionnez un indicateur…</option></select><select class="field" id="mapPeriod"><option value="last">Dernière période</option><option value="all">Toutes les périodes</option></select><button class="btn" id="drawMap">Afficher la carte</button></div><div class="mapbox"><div id="map" style="height:100%;width:100%"></div><div class="map-hint" id="mapHint">Sélectionnez un indicateur puis affichez la carte.</div><div class="legend" id="mapLegend"><b>Valeur de l'indicateur</b><div class="legendbar"></div><div class="legendlabels"><span id="legendMin">—</span><span id="legendMax">—</span></div><small id="legendUnit"></small></div></div><div class="notice">Les communes sans valeur disponible restent grisées. Les codes INS et le format réel de la réponse IWEPS sont contrôlés lors de l'association des données ; un indicateur peut ne pas couvrir toutes les communes.</div></div><div class="card"><div class="cardhead"><div><h2>Commune sélectionnée sur la carte</h2><p>Cliquer sur une commune pour ouvrir son aperçu.</p></div></div><div id="mapSelection" class="message">Aucune commune sélectionnée.</div><button class="btn secondary" id="openCommuneFromMap" disabled style="margin-top:12px">Ouvrir la fiche communale</button></div></section>
+ <section class="view" id="view-communes"><div class="card"><div class="cardhead"><div><h2>Fiches communales</h2><p>Recherchez une commune wallonne, puis explorez les indicateurs disponibles pour cette entité.</p></div></div><div class="commune-search"><input class="field" id="communeSearch" placeholder="Rechercher une commune…"><button class="btn secondary" id="clearCommune">Effacer</button></div><div class="commune-grid"><div><div class="result-head"><span id="communeCount">Chargement des limites…</span></div><div class="commune-list" id="communeList"></div></div><div class="card" style="box-shadow:none;margin:0"><div id="communeProfile" class="profile-empty">Choisissez une commune dans la liste. La fiche affichera les indicateurs après sélection.</div></div></div></div></section>
+ <div class="foot">Sources : IWEPS / WalStat et limites communales ouvertes. Vérifiez la période de référence propre à chaque indicateur.</div>
 </main>
-
-<footer>
-  Données : IWEPS — Institut wallon de l'évaluation, de la prospective et de la statistique.
-</footer>
-
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
 <script>
-  const $ = id => document.getElementById(id);
-  let indicators = [];
-  let selected = null;
-  let lastDownload = null;
-  let searchTimer = null;
-
-  function setStatus(message, error = false) {
-    $("status").textContent = message;
-    $("status").className = error ? "error" : "";
-  }
-
-  function setDataStatus(message, error = false) {
-    $("dataStatus").textContent = message;
-    $("dataStatus").style.color = error ? "#b42318" : "";
-  }
-
-  async function fetchJson(url) {
-    const response = await fetch(url);
-    const text = await response.text();
-
-    let result;
-    try {
-      result = JSON.parse(text);
-    } catch {
-      throw new Error(
-        "Le serveur a renvoyé une réponse inattendue (HTTP " +
-        response.status + "). Vérifiez le déploiement Render."
-      );
-    }
-
-    if (!response.ok) {
-      throw new Error(result.error || "Erreur HTTP " + response.status);
-    }
-    return result;
-  }
-
-  async function searchIndicators() {
-    const query = $("search").value.trim();
-    setStatus("Recherche en cours…");
-
-    try {
-      const params = new URLSearchParams({ q: query, limit: "100" });
-      const result = await fetchJson("/api/indicators?" + params);
-      indicators = result.indicators || [];
-      renderIndicators();
-      setStatus(
-        result.count + " indicateur(s) trouvé(s)." +
-        (result.count > indicators.length
-          ? " Affichage des " + indicators.length + " premiers résultats."
-          : "")
-      );
-    } catch (error) {
-      $("results").replaceChildren();
-      setStatus(error.message, true);
-    }
-  }
-
-  function renderIndicators() {
-    const results = $("results");
-    results.replaceChildren();
-
-    if (!indicators.length) {
-      results.textContent = "Aucun indicateur trouvé.";
-      return;
-    }
-
-    indicators.forEach(indicator => {
-      const button = document.createElement("button");
-      button.className = "indicator" +
-        (selected && selected.id === indicator.id ? " selected" : "");
-
-      const title = document.createElement("strong");
-      title.textContent = indicator.title;
-      button.appendChild(title);
-
-      const detail = document.createElement("small");
-      detail.textContent = indicator.id +
-        (indicator.description ? " — " + indicator.description : "");
-      button.appendChild(detail);
-
-      button.addEventListener("click", () => {
-        selected = indicator;
-        $("selectedIndicator").textContent =
-          indicator.title + " (" + indicator.id + ")";
-        renderIndicators();
-        setDataStatus("Indicateur sélectionné. Vous pouvez charger ses données.");
-      });
-
-      results.appendChild(button);
-    });
-  }
-
-  function flatten(value, prefix = "", output = {}) {
-    if (value && typeof value === "object" && !Array.isArray(value)) {
-      Object.entries(value).forEach(([key, child]) => {
-        flatten(child, prefix ? prefix + "." + key : key, output);
-      });
-    } else {
-      output[prefix || "valeur"] =
-        value === null || value === undefined ? "" :
-        typeof value === "object" ? JSON.stringify(value) : value;
-    }
-    return output;
-  }
-
-  function renderTable(data) {
-    const container = $("tableContainer");
-    container.replaceChildren();
-
-    let rows;
-    if (Array.isArray(data)) {
-      rows = data.map(item =>
-        item && typeof item === "object" ? flatten(item) : { valeur: item }
-      );
-    } else if (data && typeof data === "object") {
-      const arrayValue = Object.values(data).find(Array.isArray);
-      if (arrayValue) {
-        rows = arrayValue.map(item =>
-          item && typeof item === "object" ? flatten(item) : { valeur: item }
-        );
-      } else {
-        rows = [flatten(data)];
-      }
-    } else {
-      rows = [{ valeur: data }];
-    }
-
-    if (!rows.length) {
-      container.textContent = "Aucune ligne de données.";
-      return;
-    }
-
-    const columns = [...new Set(rows.flatMap(row => Object.keys(row)))];
-    const table = document.createElement("table");
-    const thead = document.createElement("thead");
-    const headerRow = document.createElement("tr");
-
-    columns.forEach(column => {
-      const th = document.createElement("th");
-      th.textContent = column;
-      headerRow.appendChild(th);
-    });
-
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    const tbody = document.createElement("tbody");
-    rows.slice(0, 500).forEach(row => {
-      const tr = document.createElement("tr");
-      columns.forEach(column => {
-        const td = document.createElement("td");
-        td.textContent = row[column] ?? "";
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
-    });
-
-    table.appendChild(tbody);
-    container.appendChild(table);
-
-    if (rows.length > 500) {
-      const note = document.createElement("p");
-      note.textContent = "Aperçu limité à 500 lignes.";
-      container.appendChild(note);
-    }
-  }
-
-  async function loadData() {
-    if (!selected) {
-      setDataStatus("Choisissez d'abord un indicateur.", true);
-      return;
-    }
-
-    $("loadData").disabled = true;
-    $("download").disabled = true;
-    setDataStatus("Chargement des données…");
-
-    const params = new URLSearchParams({
-      indicator: selected.id,
-      territory: $("territory").value,
-      period: $("period").value,
-      format: $("format").value
-    });
-
-    try {
-      const response = await fetch("/api/data?" + params);
-      const text = await response.text();
-
-      if (!response.ok) {
-        let message = "Impossible de charger les données.";
-        try {
-          message = JSON.parse(text).error || message;
-        } catch {}
-        throw new Error(message);
-      }
-
-      lastDownload = {
-        text,
-        format: $("format").value,
-        name: selected.id
-      };
-      $("download").disabled = false;
-
-      if ($("format").value === "csv") {
-        $("dataOutput").textContent = text.slice(0, 30000);
-        $("tableContainer").textContent =
-          "Données CSV reçues. Utilisez Télécharger pour récupérer le fichier.";
-      } else {
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch {
-          throw new Error("Les données reçues ne sont pas du JSON valide.");
-        }
-        $("dataOutput").textContent = JSON.stringify(data, null, 2);
-        renderTable(data);
-      }
-
-      setDataStatus("Données chargées.");
-    } catch (error) {
-      setDataStatus(error.message, true);
-      $("dataOutput").textContent = error.message;
-      $("tableContainer").textContent = "Les données n'ont pas pu être affichées.";
-    } finally {
-      $("loadData").disabled = false;
-    }
-  }
-
-  function downloadData() {
-    if (!lastDownload) return;
-
-    const blob = new Blob(
-      [lastDownload.text],
-      { type: lastDownload.format === "csv"
-          ? "text/csv;charset=utf-8"
-          : "application/json;charset=utf-8" }
-    );
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = lastDownload.name + "." + lastDownload.format;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  $("search").addEventListener("input", () => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(searchIndicators, 350);
-  });
-  $("loadData").addEventListener("click", loadData);
-  $("download").addEventListener("click", downloadData);
-
-  searchIndicators();
+const $=id=>document.getElementById(id);let allIndicators=[],filteredIndicators=[],selectedIndicator=null,lastData=null,communes=[],map=null,mapLayer=null,mapValues=new Map(),selectedCommune=null,topologyReady=false;
+const themeIcons={'Population':'♙','Emploi et marché du travail':'▥','Économie et entreprises':'↗','Revenus et précarité':'€','Logement et immobilier':'⌂','Santé et bien-être':'＋','Enseignement et formation':'▤','Mobilité et transport':'⇄','Environnement et énergie':'♧','Territoire et services':'⌖','Autres indicateurs':'◈'};
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function norm(s){return String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()}
+function setMessage(id,msg,error=false){$(id).textContent=msg;$(id).classList.toggle('error',error)}
+async function fetchJson(url){const r=await fetch(url);const t=await r.text();let j;try{j=JSON.parse(t)}catch{throw new Error('Réponse serveur non JSON (HTTP '+r.status+'). Vérifiez le déploiement Render.')}if(!r.ok)throw new Error(j.error||('Erreur HTTP '+r.status));return j}
+async function init(){try{const r=await fetchJson('/api/indicators?limit=500');allIndicators=r.indicators||[];$('indicatorCount').textContent=r.count??allIndicators.length;$('apiStatus').textContent='● Catalogue connecté';$('themeCount').textContent=new Set(allIndicators.map(x=>x.theme||'Autres indicateurs')).size;populateThemes();renderIndicators();populateMapSelect();}catch(e){$('apiStatus').textContent='● Catalogue indisponible';$('apiStatus').style.color='#b42318';setMessage('dataMessage',e.message,true);$('resultCount').textContent=e.message}loadTopology()}
+function themes(){return [...new Set(allIndicators.map(x=>x.theme||'Autres indicateurs'))].sort((a,b)=>a.localeCompare(b,'fr'))}
+function populateThemes(){const ts=themes();$('themeGrid').innerHTML=ts.map(t=>`<button class="theme-card" data-theme="${esc(t)}"><span class="theme-icon">${themeIcons[t]||'◈'}</span><b>${esc(t)}</b><small>${allIndicators.filter(x=>(x.theme||'Autres indicateurs')===t).length} indicateurs</small></button>`).join('');$('themeFilter').innerHTML='<option value="">Toutes les thématiques</option>'+ts.map(t=>`<option>${esc(t)}</option>`).join('');$('themeGrid').querySelectorAll('[data-theme]').forEach(b=>b.addEventListener('click',()=>{$('themeFilter').value=b.dataset.theme;applyFilter();document.querySelectorAll('.theme-card').forEach(x=>x.classList.toggle('selected',x===b))}))}
+function applyFilter(){const q=norm($('search').value),theme=$('themeFilter').value;filteredIndicators=allIndicators.filter(x=>(!theme||(x.theme||'Autres indicateurs')===theme)&&(!q||norm(x.title).includes(q)||norm(x.description).includes(q)||norm(x.id).includes(q)));renderIndicators()}
+function renderIndicators(){const list=$('indicatorList');$('resultCount').textContent=filteredIndicators.length+' indicateur(s) affiché(s)';if(!filteredIndicators.length){list.innerHTML='<div class="message">Aucun indicateur ne correspond à la recherche.</div>';return}list.innerHTML=filteredIndicators.slice(0,100).map(x=>`<button class="indicator ${selectedIndicator?.id===x.id?'selected':''}" data-id="${esc(x.id)}"><span class="dot">${themeIcons[x.theme]||'◈'}</span><span class="info"><b>${esc(x.title)}</b><small>${esc(x.description||x.id)}</small></span><span class="tag">${esc(x.theme||'Autres indicateurs')}</span></button>`).join('');list.querySelectorAll('[data-id]').forEach(b=>b.addEventListener('click',()=>selectIndicator(b.dataset.id)))}
+function selectIndicator(id){selectedIndicator=allIndicators.find(x=>x.id===id)||null;if(!selectedIndicator)return;$('selectedTitle').textContent=selectedIndicator.title+' · '+selectedIndicator.id;$('loadSelected').disabled=false;renderIndicators();$('mapIndicator').value=id;}
+function populateMapSelect(){const opts=allIndicators.map(x=>`<option value="${esc(x.id)}">${esc(x.title)}</option>`).join('');$('mapIndicator').innerHTML='<option value="">Sélectionnez un indicateur…</option>'+opts}
+function goView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));const labels={catalogue:['Explorer les indicateurs','Parcourez le catalogue IWEPS par thème ou recherchez un indicateur.'],carte:['Comparer les territoires','Visualisez la répartition spatiale d’un indicateur dans les communes wallonnes.'],communes:['Fiches communales','Choisissez une commune et consultez les indicateurs territoriaux disponibles.']};$('pageTitle').textContent=labels[name][0];$('pageSubtitle').textContent=labels[name][1];if(name==='carte'&&map)setTimeout(()=>map.invalidateSize(),100)}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>goView(b.dataset.view)));$('search').addEventListener('input',applyFilter);$('themeFilter').addEventListener('change',()=>{document.querySelectorAll('.theme-card').forEach(b=>b.classList.toggle('selected',b.dataset.theme===$('themeFilter').value));applyFilter()});$('clearTheme').addEventListener('click',()=>{$('themeFilter').value='';$('search').value='';document.querySelectorAll('.theme-card').forEach(b=>b.classList.remove('selected'));applyFilter()});
+function unwrapRows(data){if(Array.isArray(data))return data;if(!data||typeof data!=='object')return[];for(const k of ['data','observations','results','resultats','records','values','donnees'])if(Array.isArray(data[k]))return data[k];const arrays=Object.values(data).filter(Array.isArray);return arrays.sort((a,b)=>b.length-a.length)[0]||[data]}
+function firstProp(obj,keys){for(const k of keys){if(obj[k]!==undefined&&obj[k]!==null&&obj[k]!=='')return obj[k]}const wanted=keys.map(norm);for(const [k,v] of Object.entries(obj||{})){if(wanted.some(w=>norm(k)===w||norm(k).includes(w))&&v!==undefined&&v!==null&&v!=='')return v}return null}
+function rowCode(row){let v=firstProp(row,['ins','code_ins','codeIns','code_entite','code_entité','nis','code','entite_id','entité_id','geo','id_entite','id']);if(v&&typeof v==='object')v=firstProp(v,['code','ins','id']);if(v===null)return null;const m=String(v).match(/\d{4,6}/);return m?String(parseInt(m[0],10)).padStart(4,'0'):null}
+function rowName(row){return firstProp(row,['entite','entité','nom_entite','nom','name','libelle','libellé','geo_label','territoire','commune','label'])}
+function rowValue(row){let v=firstProp(row,['valeur','value','val','obs_value','observation','resultat','résultat','data_value']);if(v===null){for(const [k,x] of Object.entries(row||{})){if(/valeur|value|resultat|résultat/i.test(k)&&x!==null&&x!==''&&Number.isFinite(Number(String(x).replace(',','.')))){v=x;break}}}if(typeof v==='string')v=v.replace(/\s/g,'').replace(',','.');return v!==null&&v!==''&&Number.isFinite(Number(v))?Number(v):null}
+function rowPeriod(row){return firstProp(row,['periode','période','period','annee','année','year','time','date'])}
+function rowsToObjects(data){return unwrapRows(data).map(r=>r&&typeof r==='object'?r:{valeur:r})}
+function renderDataTable(rows){if(!rows.length){$('dataTable').innerHTML='';$('rowInfo').textContent='';return}const cols=[...new Set(rows.flatMap(r=>Object.keys(r)))].slice(0,14);$('dataTable').innerHTML='<table><thead><tr>'+cols.map(k=>'<th>'+esc(k)+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(0,500).map(r=>'<tr>'+cols.map(k=>'<td>'+esc(typeof r[k]==='object'?JSON.stringify(r[k]):r[k])+'</td>').join('')+'</tr>').join('')+'</tbody></table>';$('rowInfo').textContent=rows.length+' ligne(s) · aperçu limité à 500'}
+async function loadSelectedData(){if(!selectedIndicator){setMessage('dataMessage','Choisissez d’abord un indicateur.',true);return}const territory=$('territory').value,period=$('period').value,format=$('dataFormat').value;setMessage('dataMessage','Chargement des données…');$('loadSelected').disabled=true;try{const d=await fetch('/api/data?'+new URLSearchParams({indicator:selectedIndicator.id,territory,period,format}));const text=await d.text();let data;if(!d.ok){try{throw new Error(JSON.parse(text).error||'Erreur de chargement')}catch(e){if(e instanceof SyntaxError)throw new Error('Erreur de chargement (HTTP '+d.status+')');throw e}}if(format==='csv'){lastData={text,format,indicator:selectedIndicator.id};$('dataTable').innerHTML='<div class="message">CSV reçu. Utilisez le bouton Télécharger les données.</div>';$('rowInfo').textContent='CSV';setMessage('dataMessage','Données CSV chargées.');}else{try{data=JSON.parse(text)}catch{throw new Error('Les données renvoyées par IWEPS ne sont pas un JSON valide.')}const rows=rowsToObjects(data);lastData={text,format,indicator:selectedIndicator.id};renderDataTable(rows);setMessage('dataMessage',rows.length+' ligne(s) reçue(s).');} $('downloadData').disabled=false}catch(e){setMessage('dataMessage',e.message,true)}finally{$('loadSelected').disabled=false}}
+$('loadSelected').addEventListener('click',loadSelectedData);$('downloadData').addEventListener('click',()=>{if(!lastData)return;const blob=new Blob([lastData.text],{type:lastData.format==='csv'?'text/csv;charset=utf-8':'application/json;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=lastData.indicator+'.'+lastData.format;a.click();URL.revokeObjectURL(a.href)});
+async function loadTopology(){try{const r=await fetch('https://raw.githubusercontent.com/bmesuere/belgium-topojson/master/belgium.json');if(!r.ok)throw new Error('Limites géographiques indisponibles');const topo=await r.json();const object=topo.objects.municipalities||topo.objects.municipality||Object.values(topo.objects)[0];let geo=topojson.feature(topo,object);communes=geo.features.filter(f=>{const p=f.properties||{};const region=String(p.reg_nis??p.regNis??p.reg_code??'');return region==='3000'||region==='03000'||norm(p.reg_fr||p.region_fr||'').includes('wallon')});communes=communes.map(f=>{const p=f.properties||{};return {...f,_nis:String(p.nis??p.NIS??p.niscode??p.ins??'').padStart(4,'0'),_name:p.name_fr||p.nameFr||p.nom_fr||p.name||p.name_nl||'Commune inconnue'}}).filter(f=>f._nis&&f._name);communes.sort((a,b)=>a._name.localeCompare(b._name,'fr'));topologyReady=true;renderCommuneList();initMap()}catch(e){$('communeCount').textContent='Limites communales indisponibles';$('communeProfile').textContent='Impossible de charger la source géographique externe. Vérifiez la connexion et la disponibilité du dépôt TopoJSON.';$('mapHint').textContent='Les limites géographiques ne sont pas disponibles.';$('mapSelection').textContent=e.message}}
+function renderCommuneList(){const q=norm($('communeSearch').value);const list=communes.filter(c=>norm(c._name).includes(q)||c._nis.includes(q));$('communeCount').textContent=list.length+' commune(s)';$('communeList').innerHTML=list.map(c=>`<button class="commune-item ${selectedCommune?._nis===c._nis?'active':''}" data-nis="${esc(c._nis)}">${esc(c._name)}</button>`).join('');$('communeList').querySelectorAll('[data-nis]').forEach(b=>b.addEventListener('click',()=>selectCommune(b.dataset.nis)))}$('communeSearch').addEventListener('input',renderCommuneList);$('clearCommune').addEventListener('click',()=>{$('communeSearch').value='';renderCommuneList()});
+function initMap(){if(!communes.length)return;if(map){map.remove();map=null}map=L.map('map',{scrollWheelZoom:false}).setView([50.45,4.65],8);L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);mapLayer=L.geoJSON(communes,{style:featureStyle,onEachFeature:(f,layer)=>{layer.bindTooltip(f._name);layer.on('click',()=>{selectCommune(f._nis);$('mapSelection').textContent=f._name+' · INS '+f._nis+ (mapValues.has(f._nis)?' · Valeur : '+mapValues.get(f._nis):' · Pas de valeur chargée');$('openCommuneFromMap').disabled=false})}}).addTo(map);try{map.fitBounds(mapLayer.getBounds(),{padding:[12,12]})}catch{}setTimeout(()=>map.invalidateSize(),200)}
+function featureStyle(f){const v=mapValues.get(f._nis);return{color:'#fff',weight:.8,fillOpacity:v===undefined ? .65 : .82,fillColor:v===undefined?'#d9dfdb':colorFor(v)}}function colorFor(v){const vals=[...mapValues.values()].filter(Number.isFinite).sort((a,b)=>a-b);if(!vals.length)return'#d9dfdb';const min=vals[0],max=vals[vals.length-1],t=max===min ? .5 : (v-min)/(max-min);return t<.25?'#e5f0d7':t<.5?'#a8d5a2':t<.75?'#4d9c70':'#155c4b'}
+async function drawMap(){const id=$('mapIndicator').value;if(!id){$('mapHint').textContent='Sélectionnez un indicateur avant d’afficher la carte.';return}if(!topologyReady){$('mapHint').textContent='Chargement des limites communales en cours…';return}const indicator=allIndicators.find(x=>x.id===id);$('mapHint').textContent='Chargement des valeurs : '+(indicator?.title||id);$('legendUnit').textContent='Indicateur : '+(indicator?.title||id);mapValues=new Map();try{const d=await fetchJson('/api/data?'+new URLSearchParams({indicator:id,territory:'com',period:$('mapPeriod').value,format:'json'}));const rows=rowsToObjects(d);let matched=0;for(const r of rows){const code=rowCode(r),value=rowValue(r);if(code&&value!==null){mapValues.set(code,value);matched++}}if(mapLayer)mapLayer.setStyle(featureStyle);const vals=[...mapValues.values()].filter(Number.isFinite);$('legendMin').textContent=vals.length?Math.min(...vals).toLocaleString('fr-BE'):'—';$('legendMax').textContent=vals.length?Math.max(...vals).toLocaleString('fr-BE'):'—';$('mapHint').textContent=matched+' valeur(s) numérique(s) associée(s) aux codes INS. Cliquez sur une commune.';if(!matched)$('mapHint').textContent='Données reçues, mais aucune correspondance automatique code INS / valeur reconnue. Consultez le tableau de données pour vérifier le format IWEPS.';if(mapLayer)mapLayer.eachLayer(l=>{if(l.feature._nis===selectedCommune?._nis)l.setStyle({color:'#172c23',weight:2.5})})}catch(e){$('mapHint').textContent=e.message}}
+$('drawMap').addEventListener('click',drawMap);$('mapIndicator').addEventListener('change',()=>{const id=$('mapIndicator').value;if(id){selectedIndicator=allIndicators.find(x=>x.id===id)||selectedIndicator;$('selectedTitle').textContent=selectedIndicator?.title||id;$('loadSelected').disabled=!selectedIndicator}});function selectCommune(nis){selectedCommune=communes.find(c=>c._nis===nis);if(!selectedCommune)return;renderCommuneList();const c=selectedCommune;$('communeProfile').className='';$('communeProfile').innerHTML=`<div class="profile-title"><div><div class="eyebrow">Fiche communale</div><h2>${esc(c._name)}</h2><div class="sub">Code INS : ${esc(c._nis)}</div></div><span class="tag">Wallonie</span></div><div class="profile-kpis"><div class="kpi"><small>Indicateur sélectionné</small><b style="font-size:14px">${esc(selectedIndicator?.title||'Aucun')}</b></div><div class="kpi"><small>Valeur disponible</small><b>${mapValues.has(c._nis)?esc(mapValues.get(c._nis).toLocaleString('fr-BE')):'—'}</b></div></div><div class="notice">Cette fiche est une base de navigation. Pour consulter une valeur, sélectionnez un indicateur dans le catalogue puis chargez les données. Les indicateurs n’ont pas tous une couverture communale.</div><button class="btn" id="profileLoad" style="margin-top:14px" ${selectedIndicator?'':'disabled'}>Charger l’indicateur pour cette commune</button><div id="profileData" style="margin-top:12px"></div>`;$('profileLoad')?.addEventListener('click',()=>loadCommuneIndicator(c));if(mapLayer)mapLayer.setStyle(featureStyle);if(mapLayer)mapLayer.eachLayer(l=>{if(l.feature._nis===c._nis)l.setStyle({color:'#172c23',weight:2.5})});if(map)try{map.fitBounds(mapLayer.getLayers().find(l=>l.feature._nis===c._nis).getBounds(),{maxZoom:10})}catch{}$('mapSelection').textContent=c._name+' · INS '+c._nis+(mapValues.has(c._nis)?' · Valeur : '+mapValues.get(c._nis):'');$('openCommuneFromMap').disabled=false}
+async function loadCommuneIndicator(c){if(!selectedIndicator)return;const box=$('profileData');box.textContent='Chargement…';try{const d=await fetchJson('/api/data?'+new URLSearchParams({indicator:selectedIndicator.id,territory:'com',period:'all',format:'json'}));const rows=rowsToObjects(d);const found=rows.filter(r=>rowCode(r)===c._nis);if(!found.length){box.innerHTML='<div class="message">Aucune ligne trouvée pour le code INS '+esc(c._nis)+'. Cela peut signifier que l’indicateur ne couvre pas cette commune ou que le format du code doit être vérifié.</div>';return}box.innerHTML='<h3 style="font-size:14px">'+esc(selectedIndicator.title)+'</h3><div class="tablewrap"><table><thead><tr><th>Période</th><th>Valeur</th></tr></thead><tbody>'+found.map(r=>'<tr><td>'+esc(rowPeriod(r)??'—')+'</td><td>'+esc(rowValue(r)??'—')+'</td></tr>').join('')+'</tbody></table></div>'}catch(e){box.innerHTML='<div class="message error">'+esc(e.message)+'</div>'}}
+$('openCommuneFromMap').addEventListener('click',()=>{if(selectedCommune){goView('communes');selectCommune(selectedCommune._nis)}});init();
 </script>
-</body>
-</html>
+</body></html>
