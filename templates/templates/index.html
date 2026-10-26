@@ -18,7 +18,7 @@ input,select,button{font:inherit;padding:11px 13px;border-radius:8px}input,selec
 <header><div class="brand">Explorateur <span>IWEPS</span></div><div class="muted">Les statistiques de la Wallonie</div></header>
 <main><section class="hero"><small>DONNÉES PUBLIQUES · WALLONIE</small><h1>Comprendre la Wallonie<br>grâce aux données</h1><p>Recherchez des indicateurs, visualisez leur évolution et comparez les territoires lorsque les données sont disponibles.</p></section>
 <section class="panel"><h2>Rechercher un indicateur</h2><p class="muted">Exemple : population, emploi, logement ou identifiant 831110_1.</p>
-<form id="searchform"><div class="search"><input id="q" type="search" placeholder="Que recherchez-vous ?"><button id="searchbtn">Rechercher</button></div></form><div id="searchstatus" class="status">Connexion au catalogue IWEPS...</div><p id="count" class="muted"></p><div id="results"></div></section>
+<form id="searchform"><div class="search"><input id="q" type="search" placeholder="Que recherchez-vous ?"><button id="searchbtn">Rechercher</button></div></form><div class="filters"><label>Thème<select id="themefilter"><option value="">Tous les thèmes</option></select></label><label>Sous-thème<select id="subthemefilter"><option value="">Tous les sous-thèmes</option></select></label></div><p class="muted">Les thèmes sont repris du catalogue lorsqu’ils sont disponibles ; sinon, le classement par mots-clés est indicatif et peut nécessiter une vérification.</p><div id="searchstatus" class="status">Connexion au catalogue IWEPS...</div><p id="count" class="muted"></p><div id="results"></div></section>
 <section id="datapanel" class="panel hidden"><h2 id="title"></h2><p id="description" class="muted"></p>
 <div class="filters"><label>Territoire<select id="territory"><option value="com">Communes</option><option value="arr">Arrondissements</option><option value="prov">Provinces</option><option value="reg">Wallonie</option></select></label>
 <label>Période<select id="period"><option value="all">Toutes les périodes</option><option value="last">Dernière période</option></select></label>
@@ -37,18 +37,60 @@ input,select,button{font:inherit;padding:11px 13px;border-radius:8px}input,selec
 <div id="table"></div><details><summary>Afficher les données brutes (JSON)</summary><pre id="raw"></pre></details></section></main>
 <footer class="muted" style="text-align:center">Explorateur indépendant utilisant les données publiques de l'IWEPS. La disponibilité dépend de l'indicateur, du territoire et de la période.</footer>
 <script>
-const $=id=>document.getElementById(id);let chosen=null,dataNow=null,rowsNow=[],line=null,bar=null,levelChart=null,searchSeq=0,levelRows={com:[],arr:[],prov:[],reg:[]};
+const $=id=>document.getElementById(id);let chosen=null,dataNow=null,rowsNow=[],line=null,bar=null,levelChart=null,searchSeq=0,levelRows={com:[],arr:[],prov:[],reg:[]},allIndicators=null;
 function msg(node,text,err=false){node.textContent=text;node.classList.toggle("error",err)}
 function elem(tag,text,cls){let n=document.createElement(tag);if(text!==undefined)n.textContent=String(text);if(cls)n.className=cls;return n}
 function btn(text,fn,secondary=false){let b=elem("button",text);b.type="button";if(secondary)b.className="secondary";b.onclick=fn;return b}
 function safe(s){return String(s||"donnees").replace(/[^a-zA-Z0-9_-]/g,"_")}
 function save(text,name,type){let u=URL.createObjectURL(new Blob(["\uFEFF",text],{type})),a=elem("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
-async function search(){let seq=++searchSeq;$("searchbtn").disabled=true;msg($("searchstatus"),"Recherche dans le catalogue IWEPS...");$("results").replaceChildren();$("count").textContent="";
-try{let r=await fetch("/api/indicators?q="+encodeURIComponent($("q").value.trim())+"&limit=100"),d=await r.json();if(!r.ok)throw Error(d.error||"Recherche impossible");if(seq!==searchSeq)return;
-msg($("searchstatus"),d.message||"Recherche terminée");$("count").textContent=(d.count??d.indicators.length)+" résultat(s) ; maximum 100 affichés.";
-if(!d.indicators.length)$("results").append(elem("p","Aucun résultat.","muted"));
-d.indicators.forEach(i=>{let c=elem("article",undefined,"result");c.append(elem("h3",i.title||i.name||i.id),elem("p",i.description||"Description non disponible."),elem("p","Identifiant : "+i.id),btn("Explorer les données",()=>load(i)));$("results").append(c)})
-}catch(e){msg($("searchstatus"),e.message,true)}finally{if(seq===searchSeq)$("searchbtn").disabled=false}}
+function populateFilters(){
+ const theme=$("themefilter"), oldTheme=theme.value;
+ const themes=[...new Set((allIndicators||[]).map(i=>i.theme||"Autres indicateurs"))].sort((a,b)=>a.localeCompare(b,"fr"));
+ theme.replaceChildren(new Option("Tous les thèmes",""),...themes.map(t=>new Option(t,t)));
+ theme.value=themes.includes(oldTheme)?oldTheme:"";
+ populateSubthemes();
+}
+function populateSubthemes(){
+ const sub=$("subthemefilter"),old=sub.value,theme=$("themefilter").value;
+ const subs=[...new Set((allIndicators||[]).filter(i=>!theme||i.theme===theme).map(i=>i.subtheme||"Général"))].sort((a,b)=>a.localeCompare(b,"fr"));
+ sub.replaceChildren(new Option("Tous les sous-thèmes",""),...subs.map(s=>new Option(s,s)));
+ sub.value=subs.includes(old)?old:"";
+}
+async function search(){
+ let seq=++searchSeq;
+ $("searchbtn").disabled=true;
+ msg($("searchstatus"),"Recherche dans le catalogue IWEPS...");
+ $("results").replaceChildren();$("count").textContent="";
+ try{
+  if(!allIndicators){
+   const r=await fetch("/api/indicators?limit=2000"),d=await r.json();
+   if(!r.ok)throw Error(d.error||"Recherche impossible");
+   allIndicators=d.indicators||[];
+   populateFilters();
+  }
+  if(seq!==searchSeq)return;
+  const q=$("q").value.trim().toLocaleLowerCase("fr");
+  const theme=$("themefilter").value,sub=$("subthemefilter").value;
+  const found=allIndicators.filter(i=>{
+   const text=[i.title,i.description,i.id,i.theme,i.subtheme].join(" ").toLocaleLowerCase("fr");
+   return (!q||text.includes(q))&&(!theme||i.theme===theme)&&(!sub||i.subtheme===sub);
+  });
+  msg($("searchstatus"),"Catalogue chargé : "+allIndicators.length+" indicateur(s).");
+  $("count").textContent=found.length+" résultat(s) affiché(s).";
+  if(!found.length)$("results").append(elem("p","Aucun résultat.","muted"));
+  found.slice(0,250).forEach(i=>{
+   let c=elem("article",undefined,"result");
+   c.append(elem("h3",i.title||i.name||i.id),
+    elem("p",i.description||"Description non disponible."),
+    elem("p","Thème : "+(i.theme||"Autres indicateurs")+" · Sous-thème : "+(i.subtheme||"Général"),"muted"),
+    elem("p","Identifiant : "+i.id),
+    btn("Explorer les données",()=>load(i)));
+   $("results").append(c);
+  });
+  if(found.length>250)$("count").textContent+=" Les 250 premiers résultats sont affichés ; affinez les filtres.";
+ }catch(e){msg($("searchstatus"),e.message,true)}
+ finally{if(seq===searchSeq)$("searchbtn").disabled=false}
+}
 function arr(d){if(Array.isArray(d))return d;if(!d||typeof d!=="object")return [];if(Array.isArray(d.head)&&Array.isArray(d.data))return d.data.map(row=>Object.fromEntries(d.head.map((h,i)=>[h,row[i]])));for(let k of ["data","results","observations","values","result","rows"])if(Array.isArray(d[k]))return d[k];let a=Object.values(d).filter(Array.isArray);return a.length===1?a[0]:[]}
 function keynorm(k){return String(k).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"")}
 function findkey(o,words){return Object.keys(o).find(k=>words.some(w=>keynorm(k).includes(w)))}
@@ -101,5 +143,5 @@ async function fetchData(){if(!chosen)return;dataNow=null;rowsNow=[];destroy();m
 try{let r=await fetch("/api/data?"+p),txt=await r.text(),d;try{d=JSON.parse(txt)}catch{throw Error("La réponse n'est pas un JSON valide")}if(!r.ok)throw Error(d.error||"Impossible de récupérer les données");dataNow=d;$("raw").textContent=JSON.stringify(d,null,2);rowsNow=normalize(d);table(d);charts();msg($("datastatus"),rowsNow.length?"Données chargées. La courbe suit le territoire choisi ; les barres comparent les territoires pour la dernière année disponible.":"Données reçues, mais les colonnes année/territoire/valeur n'ont pas été reconnues. Le tableau et le JSON restent disponibles.",!rowsNow.length);loadLevelComparisons()
 }catch(e){msg($("datastatus"),e.message,true);loadLevelComparisons()}}
 async function csv(){if(!chosen)return;let p=new URLSearchParams({indicator:chosen.id,format:"csv",territory:$("territory").value,period:$("period").value});try{let r=await fetch("/api/data?"+p);if(!r.ok){let d=await r.json();throw Error(d.error||"Téléchargement impossible")}save(await r.text(),safe(chosen.id)+".csv","text/csv;charset=utf-8");msg($("datastatus"),"CSV téléchargé.")}catch(e){msg($("datastatus"),e.message,true)}}
-$("searchform").onsubmit=e=>{e.preventDefault();search()};$("territory").onchange=fetchData;$("period").onchange=fetchData;$("entity").onchange=()=>{charts();if(chosen&&$("territory").value==="com")fillLevelSelect("com",$("entity").value)};["com","arr","prov","reg"].forEach(level=>$("compare-"+level).onchange=drawLevelChart);$("csvbtn").onclick=csv;$("jsonbtn").onclick=()=>{if(dataNow&&chosen)save(JSON.stringify(dataNow,null,2),safe(chosen.id)+".json","application/json;charset=utf-8");else msg($("datastatus"),"Chargez d'abord un indicateur.",true)};search();
+$("searchform").onsubmit=e=>{e.preventDefault();search()};$("themefilter").onchange=()=>{populateSubthemes();search()};$("subthemefilter").onchange=search;$("q").addEventListener("input",()=>{if(allIndicators)search()});$("territory").onchange=fetchData;$("period").onchange=fetchData;$("entity").onchange=()=>{charts();if(chosen&&$("territory").value==="com")fillLevelSelect("com",$("entity").value)};["com","arr","prov","reg"].forEach(level=>$("compare-"+level).onchange=drawLevelChart);$("csvbtn").onclick=csv;$("jsonbtn").onclick=()=>{if(dataNow&&chosen)save(JSON.stringify(dataNow,null,2),safe(chosen.id)+".json","application/json;charset=utf-8");else msg($("datastatus"),"Chargez d'abord un indicateur.",true)};search();
 </script></body></html>
