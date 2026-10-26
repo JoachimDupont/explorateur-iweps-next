@@ -1,0 +1,429 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Explorateur territorial IWEPS</title>
+  <style>
+    :root {
+      --green: #176b52;
+      --light: #f3f7f5;
+      --border: #dce5e0;
+      --text: #20332c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, Arial, sans-serif;
+      color: var(--text);
+      background: var(--light);
+    }
+    header {
+      padding: 30px 5%;
+      background: var(--green);
+      color: white;
+    }
+    header h1 { margin: 0 0 8px; font-size: 27px; }
+    header p { margin: 0; opacity: .9; }
+    main { max-width: 1200px; margin: 28px auto; padding: 0 18px; }
+    .panel {
+      background: white;
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    h2 { margin-top: 0; font-size: 20px; }
+    label { display: block; font-weight: 600; margin-bottom: 7px; }
+    input, select, button {
+      font: inherit;
+      padding: 11px 12px;
+      border: 1px solid #cbd8d1;
+      border-radius: 7px;
+      width: 100%;
+      background: white;
+    }
+    button {
+      background: var(--green);
+      color: white;
+      border: 0;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:disabled { opacity: .5; cursor: wait; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+    }
+    .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .actions button { width: auto; }
+    .secondary { background: #e6efea; color: var(--green); }
+    #status { margin: 14px 0 0; color: #52665c; }
+    #status.error { color: #b42318; }
+    #results { display: grid; gap: 8px; margin-top: 15px; }
+    .indicator {
+      display: block;
+      text-align: left;
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 13px;
+      font-weight: 400;
+    }
+    .indicator:hover, .indicator.selected {
+      border-color: var(--green);
+      background: #edf6f1;
+    }
+    .indicator strong { display: block; }
+    .indicator small { display: block; color: #64766d; margin-top: 5px; }
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 10px;
+      text-align: left;
+      white-space: nowrap;
+    }
+    th { background: #edf3ef; }
+    #dataOutput {
+      max-height: 420px;
+      overflow: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-size: 12px;
+      background: #f6f8f7;
+      padding: 12px;
+      border-radius: 6px;
+    }
+    footer { text-align: center; padding: 25px; color: #64766d; font-size: 13px; }
+    @media (max-width: 600px) {
+      header h1 { font-size: 23px; }
+      .panel { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Explorateur territorial de Wallonie</h1>
+  <p>Explorez les indicateurs statistiques de l'IWEPS par territoire et période.</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>1. Rechercher un indicateur</h2>
+    <label for="search">Nom, thème ou identifiant</label>
+    <input id="search" type="search"
+           placeholder="Ex. population, emploi, logement…">
+    <p id="status" role="status">Chargement du catalogue…</p>
+    <div id="results"></div>
+  </section>
+
+  <section class="panel">
+    <h2>2. Choisir les données</h2>
+    <p id="selectedIndicator">Aucun indicateur sélectionné.</p>
+    <div class="grid">
+      <div>
+        <label for="territory">Territoire</label>
+        <select id="territory">
+          <option value="com">Communes</option>
+          <option value="arr">Arrondissements</option>
+          <option value="prov">Provinces</option>
+          <option value="reg">Région wallonne</option>
+        </select>
+      </div>
+      <div>
+        <label for="period">Période</label>
+        <select id="period">
+          <option value="all">Toutes les périodes</option>
+          <option value="last">Dernière période</option>
+        </select>
+      </div>
+      <div>
+        <label for="format">Format</label>
+        <select id="format">
+          <option value="json">JSON</option>
+          <option value="csv">CSV</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="loadData">Afficher les données</button>
+      <button id="download" class="secondary" disabled>Télécharger</button>
+    </div>
+    <p id="dataStatus" role="status"></p>
+  </section>
+
+  <section class="panel">
+    <h2>3. Résultats</h2>
+    <div id="tableContainer" class="table-wrap">
+      Sélectionnez un indicateur pour afficher les données.
+    </div>
+    <h3>Données brutes</h3>
+    <pre id="dataOutput">Aucune donnée chargée.</pre>
+  </section>
+</main>
+
+<footer>
+  Données : IWEPS — Institut wallon de l'évaluation, de la prospective et de la statistique.
+</footer>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let indicators = [];
+  let selected = null;
+  let lastDownload = null;
+  let searchTimer = null;
+
+  function setStatus(message, error = false) {
+    $("status").textContent = message;
+    $("status").className = error ? "error" : "";
+  }
+
+  function setDataStatus(message, error = false) {
+    $("dataStatus").textContent = message;
+    $("dataStatus").style.color = error ? "#b42318" : "";
+  }
+
+  async function fetchJson(url) {
+    const response = await fetch(url);
+    const text = await response.text();
+
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch {
+      throw new Error(
+        "Le serveur a renvoyé une réponse inattendue (HTTP " +
+        response.status + "). Vérifiez le déploiement Render."
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(result.error || "Erreur HTTP " + response.status);
+    }
+    return result;
+  }
+
+  async function searchIndicators() {
+    const query = $("search").value.trim();
+    setStatus("Recherche en cours…");
+
+    try {
+      const params = new URLSearchParams({ q: query, limit: "100" });
+      const result = await fetchJson("/api/indicators?" + params);
+      indicators = result.indicators || [];
+      renderIndicators();
+      setStatus(
+        result.count + " indicateur(s) trouvé(s)." +
+        (result.count > indicators.length
+          ? " Affichage des " + indicators.length + " premiers résultats."
+          : "")
+      );
+    } catch (error) {
+      $("results").replaceChildren();
+      setStatus(error.message, true);
+    }
+  }
+
+  function renderIndicators() {
+    const results = $("results");
+    results.replaceChildren();
+
+    if (!indicators.length) {
+      results.textContent = "Aucun indicateur trouvé.";
+      return;
+    }
+
+    indicators.forEach(indicator => {
+      const button = document.createElement("button");
+      button.className = "indicator" +
+        (selected && selected.id === indicator.id ? " selected" : "");
+
+      const title = document.createElement("strong");
+      title.textContent = indicator.title;
+      button.appendChild(title);
+
+      const detail = document.createElement("small");
+      detail.textContent = indicator.id +
+        (indicator.description ? " — " + indicator.description : "");
+      button.appendChild(detail);
+
+      button.addEventListener("click", () => {
+        selected = indicator;
+        $("selectedIndicator").textContent =
+          indicator.title + " (" + indicator.id + ")";
+        renderIndicators();
+        setDataStatus("Indicateur sélectionné. Vous pouvez charger ses données.");
+      });
+
+      results.appendChild(button);
+    });
+  }
+
+  function flatten(value, prefix = "", output = {}) {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      Object.entries(value).forEach(([key, child]) => {
+        flatten(child, prefix ? prefix + "." + key : key, output);
+      });
+    } else {
+      output[prefix || "valeur"] =
+        value === null || value === undefined ? "" :
+        typeof value === "object" ? JSON.stringify(value) : value;
+    }
+    return output;
+  }
+
+  function renderTable(data) {
+    const container = $("tableContainer");
+    container.replaceChildren();
+
+    let rows;
+    if (Array.isArray(data)) {
+      rows = data.map(item =>
+        item && typeof item === "object" ? flatten(item) : { valeur: item }
+      );
+    } else if (data && typeof data === "object") {
+      const arrayValue = Object.values(data).find(Array.isArray);
+      if (arrayValue) {
+        rows = arrayValue.map(item =>
+          item && typeof item === "object" ? flatten(item) : { valeur: item }
+        );
+      } else {
+        rows = [flatten(data)];
+      }
+    } else {
+      rows = [{ valeur: data }];
+    }
+
+    if (!rows.length) {
+      container.textContent = "Aucune ligne de données.";
+      return;
+    }
+
+    const columns = [...new Set(rows.flatMap(row => Object.keys(row)))];
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+
+    columns.forEach(column => {
+      const th = document.createElement("th");
+      th.textContent = column;
+      headerRow.appendChild(th);
+    });
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    rows.slice(0, 500).forEach(row => {
+      const tr = document.createElement("tr");
+      columns.forEach(column => {
+        const td = document.createElement("td");
+        td.textContent = row[column] ?? "";
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    container.appendChild(table);
+
+    if (rows.length > 500) {
+      const note = document.createElement("p");
+      note.textContent = "Aperçu limité à 500 lignes.";
+      container.appendChild(note);
+    }
+  }
+
+  async function loadData() {
+    if (!selected) {
+      setDataStatus("Choisissez d'abord un indicateur.", true);
+      return;
+    }
+
+    $("loadData").disabled = true;
+    $("download").disabled = true;
+    setDataStatus("Chargement des données…");
+
+    const params = new URLSearchParams({
+      indicator: selected.id,
+      territory: $("territory").value,
+      period: $("period").value,
+      format: $("format").value
+    });
+
+    try {
+      const response = await fetch("/api/data?" + params);
+      const text = await response.text();
+
+      if (!response.ok) {
+        let message = "Impossible de charger les données.";
+        try {
+          message = JSON.parse(text).error || message;
+        } catch {}
+        throw new Error(message);
+      }
+
+      lastDownload = {
+        text,
+        format: $("format").value,
+        name: selected.id
+      };
+      $("download").disabled = false;
+
+      if ($("format").value === "csv") {
+        $("dataOutput").textContent = text.slice(0, 30000);
+        $("tableContainer").textContent =
+          "Données CSV reçues. Utilisez Télécharger pour récupérer le fichier.";
+      } else {
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error("Les données reçues ne sont pas du JSON valide.");
+        }
+        $("dataOutput").textContent = JSON.stringify(data, null, 2);
+        renderTable(data);
+      }
+
+      setDataStatus("Données chargées.");
+    } catch (error) {
+      setDataStatus(error.message, true);
+      $("dataOutput").textContent = error.message;
+      $("tableContainer").textContent = "Les données n'ont pas pu être affichées.";
+    } finally {
+      $("loadData").disabled = false;
+    }
+  }
+
+  function downloadData() {
+    if (!lastDownload) return;
+
+    const blob = new Blob(
+      [lastDownload.text],
+      { type: lastDownload.format === "csv"
+          ? "text/csv;charset=utf-8"
+          : "application/json;charset=utf-8" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = lastDownload.name + "." + lastDownload.format;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  $("search").addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(searchIndicators, 350);
+  });
+  $("loadData").addEventListener("click", loadData);
+  $("download").addEventListener("click", downloadData);
+
+  searchIndicators();
+</script>
+</body>
+</html>
