@@ -174,7 +174,9 @@ def data():
         return jsonify({"error": "Format invalide."}), 400
     if period not in ("all", "last"):
         return jsonify({"error": "Période invalide."}), 400
-    levels = {"reg": "ins=3000", "com": "com", "arr": "arr", "prov": "prov"}
+    # Le niveau « quartier » est tenté avec le libellé de l'API WalStat ;
+    # sa disponibilité dépend de l'indicateur et du service amont.
+    levels = {"reg": "ins=3000", "com": "com", "arr": "arr", "prov": "prov", "quartier": "quartier"}
     if territory not in levels:
         return jsonify({"error": "Territoire non reconnu."}), 400
     url = f"{DATA_URL}/{fmt}/{indicator}/{levels[territory]}+period={period}"
